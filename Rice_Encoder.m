@@ -30,19 +30,17 @@ function y = Rice_Encoder(residual_signal)
             end
             % Split the bits of the mapped sample into two halves: the
             % high-order bits and the low-order-bits
-            mask = ( bitsll(1,parameter)) - 1;
-            low_order_bits = bitand(mapped_sample, mask);
-            high_order_bits = floor(bitsra(mapped_sample, parameter));
+            mask = ( bitsll(1,parameter)) - 1;%bitsll left shifts the number->bitsll(number,left shift by amount)
+            low_order_bits = bitand(mapped_sample, mask);%bitand is bitwise AND 
+            high_order_bits = floor(bitsra(mapped_sample, parameter));%bitsll right shifts the number->bitsra(number,right shift by amount)
 
-            low_order_bitarray = dec2bin(low_order_bits, parameter);
+            low_order_bitarray = dec2bin(low_order_bits, parameter);%dec2bin converts decimal to binary->dec2bin(value,number of bits to be represented in)
             high_order_bitarray = [];
             for j=1:high_order_bits
-                high_order_bitarray = [high_order_bitarray '0'];
+                high_order_bitarray = [high_order_bitarray '0'];  %Allocate high_order_bits number of bits
             end            
                 
-           %Allocate high_order_bits number of bits
-           %high_order_bitarray.setall(0)       ;            %# Set them all to zero
-           %high_order_bitarray=(high_order_bitarray.*0);
+         
            
            encoded_sample = [high_order_bitarray '1' low_order_bitarray];
            % encoded_samples.append(encoded_sample)
