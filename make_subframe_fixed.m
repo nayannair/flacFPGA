@@ -1,13 +1,14 @@
 function y = make_subframe_fixed(channel, sample_index, predictor_order)
 BLOCK_SIZE      = 4096;
-    signal = channel(sample_index : sample_index + BLOCK_SIZE);
-    warmup_samples = channel(sample_index : sample_index + predictor_order);
+    
+    signal = channel(sample_index : sample_index + BLOCK_SIZE-1,1);
+    warmup_samples = channel(sample_index : sample_index + predictor_order-1);
 
     if (length(signal) <= predictor_order) || (length(warmup_samples) < predictor_order)
         y = 0;%replace none with valid value
     else
         
-        residual_signal = fixed_predictor_residual_signal(signal, predictor_order);% Change this to fixed LPC function
+        residual_signal = fixed_lpc(signal, predictor_order);% Change this to fixed LPC function
         partition_order = 0;% # TODO: We don't yet support partitioning
         
         %parameter = rice_parameter(residual_signal);
