@@ -112,7 +112,7 @@ function [y] = decoder(input_flac)
    %residual = [7 -2 -8 2 -26 83 -91 49 -19 11 -10 1]; 
 
    order = 4;    % lpc order  
-   length = 16;  % frame size
+   length = 4096;  % frame size
    k = 1;
 
    for i = order+1:length
@@ -124,7 +124,7 @@ function [y] = decoder(input_flac)
        end
        %disp(pred_samp);
        %disp(residual((i + 12) - 16));
-       pred_samp = pred_samp + residual_signal((i + 12) - 16);
+       pred_samp = pred_samp + residual_signal((i + 4092) - 4096);
        orig_samp = [orig_samp , pred_samp]
        %disp(orig_samp);
        k = k + 1;
