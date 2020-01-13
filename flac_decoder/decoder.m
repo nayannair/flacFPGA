@@ -102,5 +102,36 @@ function [y] = decoder(input_flac)
                 
  end
  
+ 
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %Fixed LPC Decoder
+   
+   %signal = [3 7 8 5 4 9 16 23 2 8 5 6 5 7 7 1]; 
+   fixedArrCoeff = [4 -6 4 -1];                    % fixed order 4 co-efficients
+   orig_samp = [3 7 8 5];
+   %residual = [7 -2 -8 2 -26 83 -91 49 -19 11 -10 1]; 
+
+   order = 4;    % lpc order  
+   length = 16;  % frame size
+   k = 1;
+
+   for i = order+1:length
+       disp(orig_samp);
+       pred_samp = 0;
+       for j = 1:1:4
+           pred_samp = pred_samp + fixedArrCoeff(j)*orig_samp(4+k-j);
+           %disp(pred_samp);
+       end
+       %disp(pred_samp);
+       %disp(residual((i + 12) - 16));
+       pred_samp = pred_samp + residual_signal((i + 12) - 16);
+       orig_samp = [orig_samp , pred_samp]
+       %disp(orig_samp);
+       k = k + 1;
+   end 
+   
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   
+   
  %min_blk_size = input_data(1,1:4)
 end
