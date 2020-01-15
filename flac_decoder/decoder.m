@@ -1,14 +1,18 @@
-function [y] = decoder(input_flac)
- id = fopen(input_flac,'r');
- input_data=[];
- input_data= fscanf(id,'%s');
-
+%function y = decoder(input_flac)
+input_flac = 'output_new7.txt'; 
+id = fopen(input_flac,'r');
+% input_data= fscanf(id,'%s');
+input_data = y;
  k = dec2bin(input_data,8);
- k = k(:,7:end);
- j=[];
+ %k = k(:,7:end);
  counter =1;
- for i=1:length(k)
-    j = [j k(i,:)];
+ j=blanks(length(k)*8);
+ i=1;
+ x=1;
+ while(i<=length(k)*8-7)
+     j(1,i:i+7) = k(x,:);
+     i = i+8;
+     x = x+1;
  end
  
  if(~(strcmp(j(1,1:32),'01100110010011000110000101000011')))
@@ -17,11 +21,13 @@ function [y] = decoder(input_flac)
      % Metadata Block Header
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      counter = 33;
-     if( j(1,counter) ~= '1') %Checking for last metadata block
+     if(~(strcmp(j(1,counter), '1'))) %Checking for last metadata block
+        d=1
         return
      end
      counter = counter + 1;
-     if( j(1,counter:counter+6) ~= '0000000') %Checking for metadatablock type
+     if(~(strcmp(j(1,counter:counter+6), '0000000'))) %Checking for metadatablock type
+         d=2
          return
      end
      counter =counter + 7;
@@ -54,7 +60,7 @@ function [y] = decoder(input_flac)
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      unencoded_stream = [];
      
- while 1
+ for loop=1:inf
      
         counter=counter+32;
            %to skip utf8 bits
@@ -125,9 +131,6 @@ function [y] = decoder(input_flac)
                    residual_signal = [residual_signal sample];
            end
 
-    end
-
-
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        %Fixed LPC Decoder
 
@@ -137,10 +140,10 @@ function [y] = decoder(input_flac)
       %residual = [7 -2 -8 2 -26 83 -91 49 -19 11 -10 1]; 
 
       order = 4;    % lpc order  
-      length = 4096;  % frame size
+      length_frame = 4096;  % frame size
       k = 1;
 
-      for i = order+1:length
+      for i = order+1:length_frame
           disp(orig_samp);
           pred_samp = 0;
           for j = 1:1:4
@@ -157,30 +160,32 @@ function [y] = decoder(input_flac)
       unencoded_stream = [unencoded_stream orig_samp];
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-      if(counter==length(j))
+      if(counter==length(j))   
          break;
       end
+ end
 end
  %min_blk_size = input_data(1,1:4)
-end
+%end
 
 sampledepth=16;
    numchannels =1;
    
-   sampledatalen = total_samples * numchannels * (sampledepth / 8);%total samples is defined above in the code
-   id2 = fopen('decoder_output.wav','w');
-   orig_signal =[];
-   orig_signal =  [orig_signal,'01010010' '01001001' '01000110' '01000110'] %RIFF 
-   orig_signal =[orig_signal,uint32(sampledatalen+36)];
-  orig_signal =  [orig_signal, '01010111' '01000001' '01010110' '01000101'];
-  orig_signal =  [orig_signal,'01100110' '01101101' '01110100' ];
-  orig_signal =  [orig_signal,uint32(16),uint16(0x0001),uint16(numchannels),uint32(samplerate) ,uint32(samplerate * numchannels * (sampledepth/8)) ,uint16(numchannels * (sampledepth / 8)),uint16( sampledepth)];
-  orig_signal =  [orig_signal,'01100100' '01100001' '01110100' '01100001' ];
-  orig_signal =  [orig_signal,uint32(sampledatalen)];
-orig_signal =  [orig_signal,unencoded_stream ];
-  fprintf(id2,,orig_signal);
+   %sampledatalen = total_samples * numchannels * (sampledepth / 8);%total samples is defined above in the code
+   %id2 = fopen('decoder_output.wav','w');
+   %orig_signal =[];
+   %orig_signal =  [orig_signal,'01010010' '01001001' '01000110' '01000110']; %RIFF 
+   %orig_signal =[orig_signal,uint32(sampledatalen+36)];
+  %orig_signal =  [orig_signal, '01010111' '01000001' '01010110' '01000101'];
+  %orig_signal =  [orig_signal,'01100110' '01101101' '01110100' ];
+  %orig_signal =  [orig_signal,uint32(16),uint16(1),uint16(numchannels),uint32(samplerate) ,uint32(samplerate * numchannels * (sampledepth/8)) ,uint16(numchannels * (sampledepth / 8)),uint16( sampledepth)];
+%   orig_signal =  [orig_signal,'01100100' '01100001' '01110100' '01100001' ];
+%   orig_signal =  [orig_signal,uint32(sampledatalen)];
+  orig_signal =  [orig_signal,unencoded_stream ];
+%   fprintf(id2,'%b',orig_signal);
+  audiowrite('final_out.wav', orig_signal, 44100);
 
-
-end
+%y = 0;
+%end
 
 
