@@ -1,4 +1,4 @@
-function y = encode_wave_stream_edit1(input)
+function [y,raw_data] = encode_wave_stream_edit1(input)
 frames = []; %Define a list of frames
 BLOCK_SIZE      = 4096;  %# Num samples per block
 SAMPLE_RATE     = 44100; %# Hz
@@ -11,6 +11,7 @@ MAX_FIXED_PREDICTOR_ORDER=4;
    % x2 = typecast(int16(raw(:,2)),'uint16');
     %y = [x1 x2];
    y = typecast(int16(raw),'uint16');
+   raw_data = y;
   %id =fopen(input,'r');
    % y= fscanf(id,'%d');
     sample_size = SAMPLE_SIZE ; %input_file.getsampwidth() * 8          %   # Convert bytes per sample into bits per sample
@@ -21,7 +22,8 @@ MAX_FIXED_PREDICTOR_ORDER=4;
       % md5_digest = md5(input);
      % for input(2) md5_digest = '11110000111111111010010011001000100001010011011111101000110101001100111111111111010101011110101010101101100001010001100100100111';
     md5_digest = '01001011100100101000011100000101010000010001110111011110110001110110010001100000011010010100000001101000010000000000010111110101'; 
-    for sample_index= 1:BLOCK_SIZE:num_samples %Feed Block size, num_samples
+  % md5_digest = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+   for sample_index= 1:BLOCK_SIZE:num_samples %Feed Block size, num_samples
         frame_number = floor((sample_index) / BLOCK_SIZE);
         %sample_index-1 is put here to convert MATLAB 1 to python 0
         subframes = []; %Define a list of subframes
@@ -30,15 +32,15 @@ MAX_FIXED_PREDICTOR_ORDER=4;
             
            %subframe_candidates.append(make_subframe_constant(channel, sample_index))
            %subframe_candidates.append(make_subframe_verbatim(channel, sample_index))
-            for fixed_predictor_order = 1:MAX_FIXED_PREDICTOR_ORDER
-                subframe_sizes = length(make_subframe_fixed(y(:,chan_ind), sample_index, fixed_predictor_order,num_samples));% Pass each channel into this
-            end
+%             for fixed_predictor_order = 1:MAX_FIXED_PREDICTOR_ORDER
+%                 subframe_sizes = length(make_subframe_fixed(y(:,chan_ind), sample_index, fixed_predictor_order,num_samples));% Pass each channel into this
+%             end
              
             % subframe_candidates = filter(None, subframe_candidates) Use
             % this if any subframe candidate is returning null valu
-            [~,smallest_subframe_ind] = min(subframe_sizes);
-            
-            smallest_subframe = make_subframe_fixed(y(:,chan_ind), sample_index, smallest_subframe_ind, num_samples);
+%             [~,smallest_subframe_ind] = min(subframe_sizes);
+            fixed_predictor_order = 4;
+            smallest_subframe = make_subframe_fixed(y(:,chan_ind), sample_index,fixed_predictor_order , num_samples);
             subframes = [subframes smallest_subframe]; %Add to list of subframes
         end
         if (num_samples - sample_index) < BLOCK_SIZE-1 
@@ -59,6 +61,6 @@ MAX_FIXED_PREDICTOR_ORDER=4;
     metadata_blocks = metadata_block;
 
     stream = ['01100110' '01001100' '01100001' '01000011'  metadata_blocks frames];
-
+%stream =[ metadata_blocks frames];
     y = stream;
 end
