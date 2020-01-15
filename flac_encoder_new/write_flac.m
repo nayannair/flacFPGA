@@ -22,7 +22,10 @@ function j = write_flac(input)
  %convertedValue = uint8(bitset(u,8,0)) + (-2^7)*isNegative;
   j =[j,bin2dec(flac_encoded(1,i:i+7))];
  end
- j=j./256;
- 
- audiowrite('output_4.flac',j,Fs);
+% j=j./256;
+ id2 = fopen('output_new7.txt','w');
+ for i = 1 : length(j)
+    fprintf(id2,'%c',j(i));
+ end   
+%audiowrite('output_new6.flac',j,Fs);
 end
