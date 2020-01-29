@@ -1,6 +1,6 @@
 `timescale 1ns / 1ns
 `include "/home/sathwikgs/scl_pdk_180nm/stdlib/fs120/verilog/vcs_sim_model/tsl18fs120_scl.v"
-module tb_resDecode;
+module tb_riceDecode;
  
   reg iClk, rst, en;
   reg [1:0] data;
@@ -8,7 +8,7 @@ module tb_resDecode;
   wire done;
   wire  [15:0] MSB, LSB;
   
-  resDecode DUT (.iClk(iClk),.iRst(rst), .iEn(en), .iData(data), .iRiceParam(rice_param), .oMSB(MSB), .oLSB(LSB), .oDone(done));
+  riceDecode DUT (.iClk(iClk),.iRst(rst), .iEn(en), .iData(data), .iRiceParam(rice_param), .oMSB(MSB), .oLSB(LSB), .oDone(done));
 
 always
   begin
