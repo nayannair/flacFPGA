@@ -1,4 +1,4 @@
-module resDecode(input iClk,
+module riceDecode(input iClk,
 input iRst,
 input iEn,
 input [1:0] iData,
