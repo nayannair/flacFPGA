@@ -1,0 +1,145 @@
+/*
+ * FMax: 150 MHz
+ */
+
+module riceDecode(input iClk,
+input iRst,
+input iEn,
+input iData,
+input [15:0] iBlockSize,
+input [3:0] iPredictorOrder,
+input [3:0] iPartitionOrder,
+output reg [15:0] oMSB,
+output reg [15:0] oLSB,
+output reg [3:0] oRiceParam,
+output oDone);
+
+    /* Encoded residual. The number of samples (n) in the partition is determined as follows:
+
+    if the partition order is zero, n = frame's blocksize - predictor order
+    else if this is not the first partition of the subframe, n = (frame's blocksize / (2^partition order))
+    else n = (frame's blocksize / (2^partition order)) - predictor order
+    */
+
+
+    /* The number of samples expected in the current partition */
+    reg [15:0] expected_samples;
+    /* Used to precompute the typical partition size for this residual */
+    reg [15:0] typical_part_size;
+    /* The number of samples that have been seen in the current partition */
+    reg [15:0] sample_count;
+    /* The bits remaining to be read in either the LSBs or the rice parameter*/
+    reg [3:0] bits_remaining;
+    
+    /* The intermediate MSBs, LSBs and Rice Parameter*/
+    reg [15:0] procMSBs, procLSBs;
+    reg [3:0] procRiceParam;
+
+    /* The current state */
+    reg [1:0] state;
+    reg done;
+    
+    /* States */
+    parameter IDLE = 2'b00, RICE_PARAMETER = 2'b01, UNARY = 2'b10, REMAINDER = 2'b11;
+            
+    assign oDone = done;
+
+    always @(posedge iClk) begin
+        if (iRst) begin
+            state <= RICE_PARAMETER;
+            bits_remaining <= 4'd3;
+                
+            expected_samples <= iPartitionOrder ? (iBlockSize >> iPartitionOrder) - iPredictorOrder - 1'b1 : iBlockSize - iPredictorOrder - 1'b1;
+            typical_part_size <= (iBlockSize >> iPartitionOrder) - 1'b1;
+	    sample_count <= 16'b0;
+
+            done <= 1'b0;
+        
+            procLSBs <= 16'b0;
+            procMSBs <= 16'b0;
+            procRiceParam <= 4'b0;
+            
+            oRiceParam <= 4'b0;
+            oMSB <= 16'b0;
+            oLSB <= 16'b0;
+            
+        end else if (iEn) begin
+            case (state)
+                RICE_PARAMETER:
+                    begin 
+                        done <= 1'b0;
+                        sample_count <= 16'b0;
+                        
+                        procLSBs <= 1'b0;
+                        
+                        if (bits_remaining != 4'b0) begin
+                            procRiceParam[bits_remaining] <= iData;
+                            bits_remaining <= bits_remaining - 1'b1;
+                        end else begin
+                            oRiceParam <= procRiceParam | iData;
+                            state <= UNARY;
+                        end
+                    end
+                        
+                UNARY:
+                    begin
+                        done <= 1'b0;
+                        if (iData == 1'b0) begin // Count the 0s not 1s...
+                            procMSBs <= procMSBs + 1'b1;
+                        end else begin
+                            oMSB <= procMSBs;
+                            
+                            /* If the RiceParam is zero, this means there is no 
+                               remainder part, and we need to handle outputting the MSBs
+                               and jumping back to read rice param as necessary */
+                            if (oRiceParam != 0) begin
+                                bits_remaining <= oRiceParam - 1'b1;
+                                procLSBs <= 1'b0;
+                                state <= REMAINDER;
+                            end else begin
+                                procMSBs <= 16'b0;
+                                oLSB <= procLSBs;
+                                done <= 1'b1;
+                                if (sample_count != expected_samples) begin
+                                    state <= UNARY;
+                                    sample_count <= sample_count + 1'b1;
+                                end else begin 
+				    //done <= 1'b1;
+                                    state <= RICE_PARAMETER;
+                                    procRiceParam <= 4'b0;
+                                    bits_remaining <= 4'd3;
+                                    expected_samples <= typical_part_size;
+                                end
+                            end
+                        end
+                    end
+                
+                REMAINDER:
+                    begin
+                        done <= 1'b0;
+                        
+                        if (bits_remaining != 4'b0) begin
+                            procLSBs[bits_remaining] <= iData;
+                            bits_remaining <= bits_remaining - 1'b1;
+                        end else begin
+                            procMSBs <= 16'b0;
+                            oLSB <= procLSBs | iData;
+                            done <= 1'b1;
+                            
+                            if (sample_count != expected_samples) begin
+                                state <= UNARY;
+                                sample_count <= sample_count + 1'b1;
+                            end else begin
+                                state <= RICE_PARAMETER;
+                                procRiceParam <= 4'b0;
+                                bits_remaining <= 4'd3;
+                                expected_samples <= typical_part_size;
+                            end
+                        end
+                    end 
+                    
+            endcase
+        end
+    end
+    
+endmodule
